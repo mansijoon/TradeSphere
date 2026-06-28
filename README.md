@@ -210,3 +210,15 @@ Fully functional real-time trading simulation system featuring:
 ## Author
 
 TradeSphere Terminal is built as a high-fidelity trading system simulation demonstrating backend engineering, distributed systems design, and real-time financial architecture.
+
+---
+
+## Acknowledgements
+
+Thank you for taking the time to explore TradeSphere Terminal.
+
+---
+
+## Acknowledgements
+
+Thank you for taking the time to explore TradeSphere Terminal.
