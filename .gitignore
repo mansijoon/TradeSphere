@@ -1,0 +1,56 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Java
+target/
+.gradle/
+*.class
+
+# C++
+build/
+cmake-build-*/
+*.o
+*.a
+*.so
+compile_commands.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+temp/
+
+# Kubernetes secrets
+*.secret.yaml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*

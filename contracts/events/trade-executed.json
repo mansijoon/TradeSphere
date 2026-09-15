@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TradeExecuted",
+  "type": "object",
+  "required": [
+    "eventType",
+    "eventVersion",
+    "tradeId",
+    "takerOrderId",
+    "makerOrderId",
+    "instrumentId",
+    "price",
+    "quantity",
+    "timestamp"
+  ],
+  "properties": {
+    "eventType": {
+      "const": "TradeExecuted"
+    },
+    "eventVersion": {
+      "const": 1
+    },
+    "tradeId": {
+      "type": "string"
+    },
+    "takerOrderId": {
+      "type": "string"
+    },
+    "makerOrderId": {
+      "type": "string"
+    },
+    "instrumentId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "price": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "quantity": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

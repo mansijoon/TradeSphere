@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-service
+  namespace: marketforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: market-service
+  template:
+    metadata:
+      labels:
+        app: market-service
+    spec:
+      containers:
+        - name: market-service
+          image: localhost/marketforge/market-service:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres.marketforge-data.svc.cluster.local:5432/marketforge"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "marketforge"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "marketforge_dev"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "redpanda.marketforge-messaging.svc.cluster.local:9093"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: market-service
+  namespace: marketforge
+spec:
+  selector:
+    app: market-service
+  ports:
+    - port: 8082
+      targetPort: 8082
+  type: ClusterIP

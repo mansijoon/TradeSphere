@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-engine
+  namespace: marketforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine
+  template:
+    metadata:
+      labels:
+        app: matching-engine
+    spec:
+      containers:
+        - name: matching-engine
+          image: docker.io/marketforge/matching-engine:dev
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: redpanda-ca
+              mountPath: /tmp/redpanda-ca.crt
+              subPath: redpanda-ca.crt
+              readOnly: true
+          env:
+            - name: KAFKA_BROKERS
+              value: "redpanda.marketforge-messaging.svc.cluster.local:9093"
+            - name: KAFKA_TOPIC
+              value: "order.commands"
+      volumes:
+        - name: redpanda-ca
+          configMap:
+            name: redpanda-ca

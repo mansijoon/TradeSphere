@@ -1,0 +1,3 @@
+order.commands -> matching-engine -> order.events
+                              \
+                               -> trade.executed

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrderCommand",
+  "type": "object",
+  "required": [
+    "orderId",
+    "accountId",
+    "instrumentId",
+    "side",
+    "orderType",
+    "timeInForce",
+    "quantity"
+  ],
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "accountId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "instrumentId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "side": {
+      "enum": ["BUY", "SELL"]
+    },
+    "orderType": {
+      "enum": ["MARKET", "LIMIT"]
+    },
+    "timeInForce": {
+      "enum": ["DAY", "GTC", "IOC", "FOK"]
+    },
+    "price": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0
+    },
+    "quantity": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "additionalProperties": false
+}

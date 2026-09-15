@@ -1,0 +1,15 @@
+FROM docker.io/library/ubuntu:24.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       librdkafka1 \
+       ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY build/matching-engine /app/matching-engine
+
+RUN chmod +x /app/matching-engine
+
+ENTRYPOINT ["/app/matching-engine"]

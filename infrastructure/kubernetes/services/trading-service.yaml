@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trading-service
+  namespace: marketforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trading-service
+  template:
+    metadata:
+      labels:
+        app: trading-service
+    spec:
+      containers:
+        - name: trading-service
+          image: localhost/marketforge/trading-service:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: redpanda-truststore
+              mountPath: /tmp/redpanda-truststore.p12
+              subPath: redpanda-truststore.p12
+              readOnly: true
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres.marketforge-data.svc.cluster.local:5432/marketforge"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "marketforge"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "marketforge_dev"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "redpanda.tradesphere-messaging.svc.cluster.local:9093"
+            - name: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
+              value: "SSL"
+            - name: SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_LOCATION
+              value: "/tmp/redpanda-truststore.p12"
+            - name: SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_PASSWORD
+              value: "changeit"
+            - name: SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_TYPE
+              value: "PKCS12"
+            - name: SPRING_KAFKA_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM
+              value: ""
+      volumes:
+        - name: redpanda-truststore
+          secret:
+            secretName: redpanda-truststore
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trading-service
+  namespace: marketforge
+spec:
+  selector:
+    app: trading-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
