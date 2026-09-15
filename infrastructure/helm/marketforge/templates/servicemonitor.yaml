@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: marketforge-services
+  namespace: marketforge
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - trading-service
+          - risk-service
+          - market-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

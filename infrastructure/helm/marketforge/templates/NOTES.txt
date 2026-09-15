@@ -1,0 +1,13 @@
+MarketForge has been deployed.
+
+Application namespace:
+  marketforge
+
+Database namespace:
+  marketforge-data
+
+Web:
+  NodePort 31080
+
+API Gateway:
+  NodePort service on port 3000

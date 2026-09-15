@@ -7,6 +7,7 @@ import com.marketforge.trading.repository.OrderRepository;
 import com.marketforge.trading.repository.TradingAccountRepository;
 import com.marketforge.trading.service.OrderService;
 import com.marketforge.trading.service.OrderValidationService;
+import com.marketforge.trading.service.OrderCacheService;
 import com.marketforge.trading.client.RiskClient;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,7 @@ class OrderServiceRiskIntegrationTest {
         TradingAccountRepository accountRepository = mock(TradingAccountRepository.class);
         RiskClient riskClient = mock(RiskClient.class);
         OrderEventProducer producer = mock(OrderEventProducer.class);
+        OrderCacheService cacheService = mock(OrderCacheService.class);
 
         UUID accountId = UUID.randomUUID();
 
@@ -55,7 +57,8 @@ class OrderServiceRiskIntegrationTest {
                 new OrderValidationService(),
                 riskClient,
                 accountRepository,
-                producer
+                producer,
+                cacheService
         );
 
         service.create(order);
@@ -71,6 +74,7 @@ class OrderServiceRiskIntegrationTest {
         TradingAccountRepository accountRepository = mock(TradingAccountRepository.class);
         RiskClient riskClient = mock(RiskClient.class);
         OrderEventProducer producer = mock(OrderEventProducer.class);
+        OrderCacheService cacheService = mock(OrderCacheService.class);
 
         UUID accountId = UUID.randomUUID();
 
@@ -97,7 +101,8 @@ class OrderServiceRiskIntegrationTest {
                 new OrderValidationService(),
                 riskClient,
                 accountRepository,
-                producer
+                producer,
+                cacheService
         );
 
         assertThrows(InvalidOrderException.class, () -> service.create(order));
@@ -112,6 +117,7 @@ class OrderServiceRiskIntegrationTest {
         TradingAccountRepository accountRepository = mock(TradingAccountRepository.class);
         RiskClient riskClient = mock(RiskClient.class);
         OrderEventProducer producer = mock(OrderEventProducer.class);
+        OrderCacheService cacheService = mock(OrderCacheService.class);
 
         UUID accountId = UUID.randomUUID();
 
@@ -135,7 +141,8 @@ class OrderServiceRiskIntegrationTest {
                 new OrderValidationService(),
                 riskClient,
                 accountRepository,
-                producer
+                producer,
+                cacheService
         );
 
         service.create(existing);
@@ -152,6 +159,7 @@ class OrderServiceRiskIntegrationTest {
         TradingAccountRepository accountRepository =
                 mock(TradingAccountRepository.class);
         OrderEventProducer producer = mock(OrderEventProducer.class);
+        OrderCacheService cacheService = mock(OrderCacheService.class);
 
         UUID accountId = UUID.randomUUID();
 
@@ -180,7 +188,8 @@ class OrderServiceRiskIntegrationTest {
                 new OrderValidationService(),
                 riskClient,
                 accountRepository,
-                producer
+                producer,
+                cacheService
         );
 
         assertThrows(

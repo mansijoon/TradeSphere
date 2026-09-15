@@ -13,32 +13,46 @@ import org.springframework.web.client.RestClient;
 public class RiskClient {
 
     private final RestClient restClient;
+    private final String riskServiceUrl;
 
     public RiskClient(
             RestClient.Builder restClientBuilder,
             @Value("${risk.service.url:http://localhost:8081}") String riskServiceUrl
     ) {
+        this.riskServiceUrl = riskServiceUrl;
         this.restClient = restClientBuilder
                 .baseUrl(riskServiceUrl)
                 .build();
     }
 
     public void validate(Order order) {
+        System.out.println(">>> RISK CLIENT: calling " + riskServiceUrl);
+
         try {
+            RiskValidationRequest request = RiskValidationRequest.from(order);
+
+            System.out.println(">>> RISK CLIENT: request=" + request);
+
             RiskValidationResponse response = restClient
                     .post()
                     .uri("/api/v1/risk/validate")
-                    .body(RiskValidationRequest.from(order))
+                    .body(request)
                     .retrieve()
                     .onStatus(
                             HttpStatusCode::is4xxClientError,
-                            (request, httpResponse) -> {
+                            (requestMessage, httpResponse) -> {
+                                System.out.println(
+                                        ">>> RISK CLIENT: received HTTP "
+                                                + httpResponse.getStatusCode()
+                                );
                                 throw new InvalidOrderException(
                                         "Risk validation rejected order"
                                 );
                             }
                     )
                     .body(RiskValidationResponse.class);
+
+            System.out.println(">>> RISK CLIENT: response=" + response);
 
             if (response == null || !response.approved()) {
                 throw new InvalidOrderException(
@@ -49,6 +63,7 @@ public class RiskClient {
         } catch (InvalidOrderException exception) {
             throw exception;
         } catch (Exception exception) {
+            exception.printStackTrace();
             throw new InvalidOrderException(
                     "Risk service unavailable"
             );

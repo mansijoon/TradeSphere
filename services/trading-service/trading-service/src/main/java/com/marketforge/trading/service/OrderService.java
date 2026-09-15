@@ -21,24 +21,44 @@ public class OrderService {
     private final RiskClient riskClient;
     private final TradingAccountRepository accountRepository;
     private final OrderEventProducer orderEventProducer;
+    private final OrderCacheService orderCacheService;
 
     public OrderService(
             OrderRepository repository,
             OrderValidationService validationService,
             RiskClient riskClient,
             TradingAccountRepository accountRepository,
-            OrderEventProducer orderEventProducer
+            OrderEventProducer orderEventProducer,
+            OrderCacheService orderCacheService
     ) {
         this.repository = repository;
         this.validationService = validationService;
         this.riskClient = riskClient;
         this.accountRepository = accountRepository;
         this.orderEventProducer = orderEventProducer;
+        this.orderCacheService = orderCacheService;
     }
 
     @Transactional
     public Order create(Order order) {
         validationService.validate(order);
+
+        var cachedOrderId = orderCacheService.getOrderId(
+                order.getAccountId(),
+                order.getClientOrderId()
+        );
+
+        if (cachedOrderId != null) {
+            var cachedOrder = repository.findById(cachedOrderId);
+            if (cachedOrder.isPresent()) {
+                return cachedOrder.get();
+            }
+
+            orderCacheService.evict(
+                    order.getAccountId(),
+                    order.getClientOrderId()
+            );
+        }
 
         var existing = repository.findByAccountIdAndClientOrderId(
                 order.getAccountId(),
@@ -46,6 +66,7 @@ public class OrderService {
         );
 
         if (existing.isPresent()) {
+            orderCacheService.put(existing.get());
             return existing.get();
         }
 
@@ -70,6 +91,7 @@ public class OrderService {
         }
 
         Order saved = repository.save(order);
+        orderCacheService.put(saved);
         orderEventProducer.publish(saved);
         return saved;
     }

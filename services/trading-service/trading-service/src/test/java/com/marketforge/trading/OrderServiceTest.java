@@ -6,6 +6,7 @@ import com.marketforge.trading.repository.TradingAccountRepository;
 import com.marketforge.trading.messaging.OrderEventProducer;
 import com.marketforge.trading.service.OrderService;
 import com.marketforge.trading.service.OrderValidationService;
+import com.marketforge.trading.service.OrderCacheService;
 import com.marketforge.trading.client.RiskClient;
 import org.junit.jupiter.api.Test;
 
@@ -47,9 +48,10 @@ class OrderServiceTest {
         RiskClient riskClient = mock(RiskClient.class);
 
         com.marketforge.trading.messaging.OrderEventProducer eventProducer = mock(com.marketforge.trading.messaging.OrderEventProducer.class);
+        OrderCacheService cacheService = mock(OrderCacheService.class);
 
         OrderService service =
-                new OrderService(repository, validationService, riskClient, accountRepository, eventProducer);
+                new OrderService(repository, validationService, riskClient, accountRepository, eventProducer, cacheService);
 
         assertSame(existing, service.create(existing));
         verify(repository, never()).save(any());

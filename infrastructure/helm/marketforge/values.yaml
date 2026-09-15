@@ -1,0 +1,38 @@
+global:
+  imagePullPolicy: Never
+
+postgres:
+  image: postgres:16
+  storage: 5Gi
+  username: marketforge
+  password: marketforge_dev
+  database: marketforge
+
+redis:
+  image: redis:7.4-alpine
+
+images:
+  apiGateway: localhost/marketforge/api-gateway:dev
+  marketService: localhost/marketforge/market-service:dev
+  matchingEngine: docker.io/marketforge/matching-engine:dev
+  riskService: localhost/marketforge/risk-service:dev
+  tradingService: localhost/marketforge/trading-service:dev
+  web: docker.io/marketforge/web:dev
+
+kafka:
+  bootstrapServers: redpanda.tradesphere-messaging.svc.cluster.local:9093
+  marketServiceBootstrapServers: redpanda.marketforge-messaging.svc.cluster.local:9093
+  matchingEngineBrokers: redpanda.marketforge-messaging.svc.cluster.local:9093
+  truststoreLocation: /tmp/redpanda-truststore.p12
+  truststorePassword: changeit
+  truststoreType: PKCS12
+  securityProtocol: SSL
+
+risk:
+  url: http://risk-service.marketforge.svc.cluster.local:8081
+
+trading:
+  url: http://trading-service.marketforge.svc.cluster.local:8080
+
+market:
+  url: http://market-service.marketforge.svc.cluster.local:8082

@@ -1,0 +1,150 @@
+name: MarketForge CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+
+  java:
+    name: Java Services
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - services/trading-service/trading-service
+          - services/risk-service/risk-service
+          - services/market-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Test
+        working-directory: ${{ matrix.service }}
+        env:
+          DB_PASSWORD: marketforge_dev
+        run: mvn -B test
+
+
+  node:
+    name: API Gateway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/api-gateway/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/api-gateway
+        run: npm ci
+
+      - name: Build
+        working-directory: apps/api-gateway
+        run: npm run build
+
+      - name: Test
+        working-directory: apps/api-gateway
+        run: npm test
+
+
+  cpp:
+    name: C++ Matching Engine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            g++ \
+            librdkafka-dev
+
+      - name: Configure
+        working-directory: engine/matching-engine
+        run: cmake -S . -B build
+
+      - name: Build
+        working-directory: engine/matching-engine
+        run: cmake --build build --parallel
+
+      - name: Test
+        working-directory: engine/matching-engine
+        run: ctest --test-dir build --output-on-failure
+
+
+  python:
+    name: Python Quant
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: quant
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Test
+        working-directory: quant
+        run: pytest -q
+
+
+  helm:
+    name: Helm Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint
+        run: helm lint infrastructure/helm/marketforge
+
+      - name: Render
+        run: |
+          helm template marketforge infrastructure/helm/marketforge \
+            --namespace marketforge \
+            > /tmp/marketforge-rendered.yaml
+
+      - name: Verify rendered manifests
+        run: |
+          test -s /tmp/marketforge-rendered.yaml
+          grep -q "kind: Deployment" /tmp/marketforge-rendered.yaml
+          grep -q "kind: Service" /tmp/marketforge-rendered.yaml

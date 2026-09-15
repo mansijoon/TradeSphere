@@ -25,6 +25,10 @@ spec:
               subPath: redpanda-truststore.p12
               readOnly: true
           env:
+            - name: REDIS_HOST
+              value: redis.marketforge.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
             - name: SERVER_PORT
               value: "8080"
             - name: SPRING_DATASOURCE_URL
@@ -33,6 +37,8 @@ spec:
               value: "marketforge"
             - name: SPRING_DATASOURCE_PASSWORD
               value: "marketforge_dev"
+            - name: RISK_SERVICE_URL
+              value: "http://risk-service.marketforge.svc.cluster.local:8081"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "redpanda.tradesphere-messaging.svc.cluster.local:9093"
             - name: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
