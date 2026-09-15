@@ -84,8 +84,8 @@ jobs:
           sudo apt-get install -y \
             cmake \
             g++ \
-            librdkafka-dev
-          nlohmann-json3-dev
+            librdkafka-dev \
+            nlohmann-json3-dev
 
       - name: Configure
         working-directory: engine/matching-engine
