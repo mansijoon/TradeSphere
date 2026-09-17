@@ -68,3 +68,10 @@ add_test(NAME order-book-cancel-test COMMAND order-book-cancel-test)
 add_test(NAME matching-engine-test COMMAND matching-engine-test)
 add_test(NAME trade-test COMMAND trade-test)
 add_test(NAME order-command-test COMMAND order-command-test)
+
+add_executable(matching-engine-benchmark
+    bench/matching_engine_benchmark.cpp
+    src/trade_id_generator.cpp
+    src/order_book.cpp
+    src/matching_engine.cpp
+)

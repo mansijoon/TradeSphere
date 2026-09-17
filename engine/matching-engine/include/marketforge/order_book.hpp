@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace marketforge {
@@ -37,14 +38,26 @@ public:
 private:
     using OrderPtr = std::shared_ptr<Order>;
 
+    struct PriceLevel {
+        std::vector<OrderPtr> orders;
+        std::size_t head{0};
+    };
+
     struct BuyCompare {
         bool operator()(std::int64_t lhs, std::int64_t rhs) const {
             return lhs > rhs;
         }
     };
 
-    std::map<std::int64_t, std::vector<OrderPtr>, BuyCompare> bids_;
-    std::map<std::int64_t, std::vector<OrderPtr>> asks_;
+    struct OrderLocation {
+        Side side;
+        std::int64_t price_ticks;
+        std::size_t index;
+    };
+
+    std::map<std::int64_t, PriceLevel, BuyCompare> bids_;
+    std::map<std::int64_t, PriceLevel> asks_;
+    std::unordered_map<std::uint64_t, OrderLocation> orders_by_id_;
     std::size_t order_count_{0};
 };
 

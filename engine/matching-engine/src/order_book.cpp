@@ -8,11 +8,20 @@ bool OrderBook::add(Order order) {
     }
 
     auto stored = std::make_shared<Order>(std::move(order));
+    const auto id = stored->id;
+    const auto side = stored->side;
+    const auto price_ticks = stored->price_ticks;
 
-    if (stored->side == Side::BUY) {
-        bids_[stored->price_ticks].push_back(std::move(stored));
+    if (side == Side::BUY) {
+        auto& level = bids_[price_ticks];
+        const auto index = level.orders.size();
+        level.orders.push_back(std::move(stored));
+        orders_by_id_[id] = {Side::BUY, price_ticks, index};
     } else {
-        asks_[stored->price_ticks].push_back(std::move(stored));
+        auto& level = asks_[price_ticks];
+        const auto index = level.orders.size();
+        level.orders.push_back(std::move(stored));
+        orders_by_id_[id] = {Side::SELL, price_ticks, index};
     }
 
     ++order_count_;
@@ -28,7 +37,18 @@ Order* OrderBook::best_bid() {
         return nullptr;
     }
 
-    return bids_.begin()->second.front().get();
+    auto& level = bids_.begin()->second;
+
+    while (level.head < level.orders.size() &&
+           level.orders[level.head] == nullptr) {
+        ++level.head;
+    }
+
+    if (level.head == level.orders.size()) {
+        return nullptr;
+    }
+
+    return level.orders[level.head].get();
 }
 
 const Order* OrderBook::best_bid() const {
@@ -36,7 +56,19 @@ const Order* OrderBook::best_bid() const {
         return nullptr;
     }
 
-    return bids_.begin()->second.front().get();
+    const auto& level = bids_.begin()->second;
+    auto head = level.head;
+
+    while (head < level.orders.size() &&
+           level.orders[head] == nullptr) {
+        ++head;
+    }
+
+    if (head == level.orders.size()) {
+        return nullptr;
+    }
+
+    return level.orders[head].get();
 }
 
 Order* OrderBook::best_ask() {
@@ -44,7 +76,18 @@ Order* OrderBook::best_ask() {
         return nullptr;
     }
 
-    return asks_.begin()->second.front().get();
+    auto& level = asks_.begin()->second;
+
+    while (level.head < level.orders.size() &&
+           level.orders[level.head] == nullptr) {
+        ++level.head;
+    }
+
+    if (level.head == level.orders.size()) {
+        return nullptr;
+    }
+
+    return level.orders[level.head].get();
 }
 
 const Order* OrderBook::best_ask() const {
@@ -52,75 +95,155 @@ const Order* OrderBook::best_ask() const {
         return nullptr;
     }
 
-    return asks_.begin()->second.front().get();
+    const auto& level = asks_.begin()->second;
+    auto head = level.head;
+
+    while (head < level.orders.size() &&
+           level.orders[head] == nullptr) {
+        ++head;
+    }
+
+    if (head == level.orders.size()) {
+        return nullptr;
+    }
+
+    return level.orders[head].get();
 }
 
-} // namespace marketforge
-
-void marketforge::OrderBook::remove_best_bid() {
+void OrderBook::remove_best_bid() {
     if (bids_.empty()) {
         return;
     }
 
-    auto& orders = bids_.begin()->second;
-    orders.erase(orders.begin());
+    auto it = bids_.begin();
+    auto& level = it->second;
 
-    if (orders.empty()) {
-        bids_.erase(bids_.begin());
+    while (level.head < level.orders.size() &&
+           level.orders[level.head] == nullptr) {
+        ++level.head;
+    }
+
+    if (level.head == level.orders.size()) {
+        bids_.erase(it);
+        return;
+    }
+
+    auto& order = level.orders[level.head];
+
+    orders_by_id_.erase(order->id);
+    order.reset();
+    ++level.head;
+
+    if (level.head == level.orders.size()) {
+        bids_.erase(it);
     }
 
     --order_count_;
 }
 
-void marketforge::OrderBook::remove_best_ask() {
+void OrderBook::remove_best_ask() {
     if (asks_.empty()) {
         return;
     }
 
-    auto& orders = asks_.begin()->second;
-    orders.erase(orders.begin());
+    auto it = asks_.begin();
+    auto& level = it->second;
 
-    if (orders.empty()) {
-        asks_.erase(asks_.begin());
+    while (level.head < level.orders.size() &&
+           level.orders[level.head] == nullptr) {
+        ++level.head;
+    }
+
+    if (level.head == level.orders.size()) {
+        asks_.erase(it);
+        return;
+    }
+
+    auto& order = level.orders[level.head];
+
+    orders_by_id_.erase(order->id);
+    order.reset();
+    ++level.head;
+
+    if (level.head == level.orders.size()) {
+        asks_.erase(it);
     }
 
     --order_count_;
 }
 
-bool marketforge::OrderBook::cancel(std::uint64_t order_id) {
-    for (auto it = bids_.begin(); it != bids_.end(); ++it) {
-        auto& orders = it->second;
+bool OrderBook::cancel(std::uint64_t order_id) {
+    const auto location_it = orders_by_id_.find(order_id);
 
-        for (auto order = orders.begin(); order != orders.end(); ++order) {
-            if ((*order)->id == order_id) {
-                orders.erase(order);
+    if (location_it == orders_by_id_.end()) {
+        return false;
+    }
 
-                if (orders.empty()) {
-                    bids_.erase(it);
-                }
+    const auto location = location_it->second;
 
-                --order_count_;
-                return true;
+    if (location.side == Side::BUY) {
+        auto level_it = bids_.find(location.price_ticks);
+
+        if (level_it == bids_.end()) {
+            return false;
+        }
+
+        auto& level = level_it->second;
+
+        if (location.index >= level.orders.size() ||
+            level.orders[location.index] == nullptr ||
+            level.orders[location.index]->id != order_id) {
+            return false;
+        }
+
+        level.orders[location.index].reset();
+        orders_by_id_.erase(location_it);
+
+        if (location.index == level.head) {
+            while (level.head < level.orders.size() &&
+                   level.orders[level.head] == nullptr) {
+                ++level.head;
             }
+        }
+
+        if (level.head == level.orders.size()) {
+            bids_.erase(level_it);
+        }
+
+        --order_count_;
+        return true;
+    }
+
+    auto level_it = asks_.find(location.price_ticks);
+
+    if (level_it == asks_.end()) {
+        return false;
+    }
+
+    auto& level = level_it->second;
+
+    if (location.index >= level.orders.size() ||
+        level.orders[location.index] == nullptr ||
+        level.orders[location.index]->id != order_id) {
+        return false;
+    }
+
+    level.orders[location.index].reset();
+    orders_by_id_.erase(location_it);
+
+    if (location.index == level.head) {
+        while (level.head < level.orders.size() &&
+               level.orders[level.head] == nullptr) {
+            ++level.head;
         }
     }
 
-    for (auto it = asks_.begin(); it != asks_.end(); ++it) {
-        auto& orders = it->second;
-
-        for (auto order = orders.begin(); order != orders.end(); ++order) {
-            if ((*order)->id == order_id) {
-                orders.erase(order);
-
-                if (orders.empty()) {
-                    asks_.erase(it);
-                }
-
-                --order_count_;
-                return true;
-            }
-        }
+    if (level.head == level.orders.size()) {
+        asks_.erase(level_it);
     }
 
-    return false;
+    --order_count_;
+    return true;
 }
+
+} // namespace marketforge

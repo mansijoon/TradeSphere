@@ -2,6 +2,7 @@ global:
   imagePullPolicy: Never
 
 postgres:
+  enabled: true
   image: postgres:16
   storage: 5Gi
   username: marketforge

@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TYPE account_status AS ENUM (
     'ACTIVE',
     'SUSPENDED',
@@ -223,4 +221,3 @@ CREATE TABLE market_ticks (
 CREATE INDEX idx_market_ticks_instrument_time
     ON market_ticks(instrument_id, timestamp DESC);
 
-COMMIT;
